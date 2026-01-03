@@ -62,6 +62,82 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   );
 }
 
+import { Star } from "lucide-react";
+
+function SatisfactionFeedback({ status }: { status: string }) {
+  const [rating, setRating] = useState<number>(0);
+  const [feedback, setFeedback] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  if (status !== "Resolved") return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    // Feedback submission logic would go here
+  };
+
+  return (
+    <Card className="mt-6 border-green-500/20 bg-green-50/30 backdrop-blur-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+          Share Your Feedback
+        </CardTitle>
+        <CardDescription>
+          How satisfied are you with the resolution of your grievance?
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {submitted ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-4 space-y-2"
+          >
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Check className="w-6 h-6 text-green-600" />
+            </div>
+            <p className="font-semibold text-green-700">Thank you for your feedback!</p>
+            <p className="text-sm text-green-600/80">Your input helps us improve our services.</p>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex gap-2 justify-center py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className={cn(
+                    "p-1 rounded-full transition-all hover:scale-110",
+                    rating >= star ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground hover:text-yellow-500/50"
+                  )}
+                >
+                  <Star className={cn("w-8 h-8", rating >= star && "fill-current")} />
+                </button>
+              ))}
+            </div>
+            <Textarea
+              placeholder="Tell us more about your experience (optional)..."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="resize-none bg-white/50"
+            />
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={!rating}
+            >
+              Submit Feedback
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function TrackingPanel() {
   const [isTracking, setIsTracking] = useState(false);
   const [results, setResults] = useState<Complaint[] | null>(null);
@@ -197,6 +273,9 @@ function TrackingPanel() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Satisfaction Feedback Section - Only shown when Resolved */}
+                    <SatisfactionFeedback status={complaint.status} />
                   </CardContent>
                 </Card>
               </motion.div>
