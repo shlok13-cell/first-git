@@ -21,6 +21,9 @@ export const complaints = sqliteTable("complaints", {
   routingConfidence: text("routing_confidence"),
   routingReason: text("routing_reason"),
   status: text("status").notNull().default("Filed"),
+  feedbackRating: integer("feedback_rating"),
+  feedbackComment: text("feedback_comment"),
+  feedbackSubmittedAt: text("feedback_submitted_at"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
