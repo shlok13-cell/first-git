@@ -195,7 +195,8 @@ export default function Admin() {
     return "bg-green-500/10 text-green-600 border-green-500/20";
   };
 
-  const sortedComplaints = complaints?.sort((a, b) => b.urgency - a.urgency);
+  const activeComplaints = complaints?.filter(c => c.status !== "Resolved").sort((a, b) => b.urgency - a.urgency);
+  const resolvedComplaints = complaints?.filter(c => c.status === "Resolved").sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 bg-background min-h-screen">
@@ -206,7 +207,7 @@ export default function Admin() {
       >
         <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-2 text-lg">
-          Overview of all submitted grievances and their status.
+          Overview of all active submitted grievances and their status.
         </p>
       </motion.div>
 
@@ -238,138 +239,202 @@ export default function Admin() {
         </Card>
       </div>
 
-      {!sortedComplaints || sortedComplaints.length === 0 ? (
-        <div className="text-center py-20 bg-secondary/30 rounded-3xl border border-dashed border-border">
-          <CheckCircle2 className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-          <h3 className="text-xl font-semibold text-foreground">No complaints yet</h3>
-          <p className="text-muted-foreground mt-2">Everything seems to be running smoothly!</p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sortedComplaints.map((complaint, index) => (
-            <motion.div
-              key={complaint.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-            >
-              <Card className={cn(
-                "h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 group bg-card",
-                complaint.urgency >= 4 && "border-red-500/50 shadow-lg shadow-red-500/5"
-              )}>
-                <CardHeader className="space-y-3 pb-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <Badge 
-                      variant="outline" 
-                      className={cn("px-2.5 py-0.5 font-semibold text-xs transition-colors", getUrgencyColor(complaint.urgency))}
-                    >
-                      Urgency: {complaint.urgency}/5
-                    </Badge>
-                    <Select
-                      defaultValue={complaint.status}
-                      onValueChange={(value) => updateStatus.mutate({ id: complaint.id, status: value })}
-                      disabled={updateStatus.isPending}
-                    >
-                      <SelectTrigger className="w-[130px] h-8 text-xs bg-secondary/50 border-none">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COMPLAINT_STATUS.map((status) => (
-                          <SelectItem key={status} value={status} className="text-xs">
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <CardTitle className="font-display text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
-                    {complaint.category}
-                  </CardTitle>
-                  <StatusTimeline currentStatus={complaint.status} />
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground text-sm line-clamp-3 min-h-[60px] leading-relaxed">
-                    {complaint.complaintText}
-                  </p>
-                  
-                  {/* AI Routing Info */}
-                  <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                        <BrainCircuit className="w-3.5 h-3.5" />
-                        AI Routing Details
+      <div className="space-y-12">
+        {/* Active Grievances Section */}
+        <section>
+          <div className="flex items-center gap-2 mb-6">
+            <Clock className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-bold">Active Grievances</h2>
+            <Badge variant="secondary" className="ml-2">{activeComplaints?.length || 0}</Badge>
+          </div>
+
+          {!activeComplaints || activeComplaints.length === 0 ? (
+            <div className="text-center py-12 bg-secondary/20 rounded-2xl border border-dashed border-border">
+              <CheckCircle2 className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold text-foreground">No active complaints</h3>
+              <p className="text-muted-foreground mt-1">All issues are currently resolved or haven't been filed yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {activeComplaints.map((complaint, index) => (
+                <motion.div
+                  key={complaint.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <Card className={cn(
+                    "h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 group bg-card",
+                    complaint.urgency >= 4 && "border-red-500/50 shadow-lg shadow-red-500/5"
+                  )}>
+                    <CardHeader className="space-y-3 pb-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className={cn("px-2.5 py-0.5 font-semibold text-xs transition-colors", getUrgencyColor(complaint.urgency))}
+                        >
+                          Urgency: {complaint.urgency}/5
+                        </Badge>
+                        <Select
+                          defaultValue={complaint.status}
+                          onValueChange={(value) => updateStatus.mutate({ id: complaint.id, status: value })}
+                          disabled={updateStatus.isPending}
+                        >
+                          <SelectTrigger className="w-[130px] h-8 text-xs bg-secondary/50 border-none">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COMPLAINT_STATUS.map((status) => (
+                              <SelectItem key={status} value={status} className="text-xs">
+                                {status}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Badge variant="outline" className={cn(
-                        "text-[10px] px-1.5 py-0",
-                        complaint.routingConfidence === "High" ? "text-green-600 border-green-600/20" :
-                        complaint.routingConfidence === "Medium" ? "text-orange-600 border-orange-600/20" :
-                        "text-red-600 border-red-600/20"
-                      )}>
-                        {complaint.routingConfidence} Confidence
+                      <CardTitle className="font-display text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                        {complaint.category}
+                      </CardTitle>
+                      <StatusTimeline currentStatus={complaint.status} />
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <p className="text-muted-foreground text-sm line-clamp-3 min-h-[60px] leading-relaxed">
+                        {complaint.complaintText}
+                      </p>
+                      
+                      {/* AI Routing Info */}
+                      <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                            <BrainCircuit className="w-3.5 h-3.5" />
+                            AI Routing Details
+                          </div>
+                          <Badge variant="outline" className={cn(
+                            "text-[10px] px-1.5 py-0",
+                            complaint.routingConfidence === "High" ? "text-green-600 border-green-600/20" :
+                            complaint.routingConfidence === "Medium" ? "text-orange-600 border-orange-600/20" :
+                            "text-red-600 border-red-600/20"
+                          )}>
+                            {complaint.routingConfidence} Confidence
+                          </Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-snug italic">
+                          {complaint.routingReason}
+                        </div>
+                        {complaint.secondaryDepartment && (
+                          <div className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                            <Info className="w-3 h-3" />
+                            Secondary: {complaint.secondaryDepartment}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-4 border-t border-border/50 space-y-3">
+                        <div className="flex items-center justify-between text-sm text-foreground/80">
+                          <div className="flex items-center">
+                            <Building2 className="w-4 h-4 mr-2 text-primary/70" />
+                            <span className="font-medium truncate max-w-[120px]">{complaint.department}</span>
+                          </div>
+                          <Select
+                            defaultValue={complaint.department}
+                            onValueChange={(value) => updateDepartment.mutate({ id: complaint.id, department: value })}
+                            disabled={updateDepartment.isPending}
+                          >
+                            <SelectTrigger className="w-[120px] h-8 text-[10px] bg-secondary/50 border-none">
+                              <SelectValue placeholder="Reassign" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DEPARTMENTS.map((dept) => (
+                                <SelectItem key={dept} value={dept} className="text-[10px]">
+                                  {dept}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="w-4 h-4 mr-2 text-muted-foreground/70" />
+                          <span className="truncate">{complaint.location}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground pt-2">
+                          <div className="flex flex-col gap-1">
+                            <span className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
+                                {complaint.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="font-medium text-foreground">{complaint.name}</span>
+                            </span>
+                            <span className="text-[10px] pl-7 opacity-70">
+                              Mob: {complaint.mobileNumber || "Not provided"}
+                            </span>
+                          </div>
+                          <span className="font-mono opacity-50">#{complaint.id}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Resolved Grievances Section */}
+        <section className="pt-8 border-t border-border">
+          <div className="flex items-center gap-2 mb-6">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <h2 className="text-xl font-bold">Resolved Grievances</h2>
+            <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+              {resolvedComplaints?.length || 0}
+            </Badge>
+          </div>
+
+          {!resolvedComplaints || resolvedComplaints.length === 0 ? (
+            <div className="text-center py-12 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20">
+              <p className="text-muted-foreground italic text-sm">No resolved grievances to show yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {resolvedComplaints.map((complaint) => (
+                <Card key={complaint.id} className="bg-muted/50 border-muted opacity-80 hover:opacity-100 transition-opacity">
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-mono text-muted-foreground">ID: #{complaint.id}</span>
+                      <Badge variant="secondary" className="text-[9px] h-4 bg-green-100 text-green-800 border-none">
+                        Resolved
                       </Badge>
                     </div>
-                    <div className="text-[11px] text-muted-foreground leading-snug italic">
-                      {complaint.routingReason}
-                    </div>
-                    {complaint.secondaryDepartment && (
-                      <div className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Secondary: {complaint.secondaryDepartment}
+                    <CardTitle className="text-sm font-bold flex items-center justify-between">
+                      {complaint.category}
+                      <span className="text-[10px] font-normal text-muted-foreground">
+                        {complaint.createdAt ? new Date(complaint.createdAt).toLocaleString() : 'N/A'}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0 space-y-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                      "{complaint.complaintText}"
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] pt-2">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Building2 className="w-3 h-3" />
+                        {complaint.department}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="pt-4 border-t border-border/50 space-y-3">
-                    <div className="flex items-center justify-between text-sm text-foreground/80">
-                      <div className="flex items-center">
-                        <Building2 className="w-4 h-4 mr-2 text-primary/70" />
-                        <span className="font-medium truncate max-w-[120px]">{complaint.department}</span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        {complaint.location}
                       </div>
-                      <Select
-                        defaultValue={complaint.department}
-                        onValueChange={(value) => updateDepartment.mutate({ id: complaint.id, department: value })}
-                        disabled={updateDepartment.isPending}
-                      >
-                        <SelectTrigger className="w-[120px] h-8 text-[10px] bg-secondary/50 border-none">
-                          <SelectValue placeholder="Reassign" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DEPARTMENTS.map((dept) => (
-                            <SelectItem key={dept} value={dept} className="text-[10px]">
-                              {dept}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
-                    
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 mr-2 text-muted-foreground/70" />
-                      <span className="truncate">{complaint.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground pt-2">
-                      <div className="flex flex-col gap-1">
-                        <span className="flex items-center gap-1.5">
-                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                            {complaint.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-foreground">{complaint.name}</span>
-                        </span>
-                        <span className="text-[10px] pl-7 opacity-70">
-                          Mob: {complaint.mobileNumber || "Not provided"}
-                        </span>
-                      </div>
-                      <span className="font-mono opacity-50">#{complaint.id}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
