@@ -32,7 +32,7 @@ const DEPARTMENTS = [
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
 
-function ResolutionAssistant({ id, urgency }: { id: number, urgency: number }) {
+function ResolutionAssistant({ id, urgency, status }: { id: number, urgency: number, status: string }) {
   const { data: plan, isLoading } = useQuery({
     queryKey: [`/api/admin/complaints/${id}/resolution-plan`],
     queryFn: async () => {
@@ -44,32 +44,44 @@ function ResolutionAssistant({ id, urgency }: { id: number, urgency: number }) {
 
   if (isLoading || !plan) return <Skeleton className="h-24 w-full rounded-xl" />;
 
+  const isResolved = status === "Resolved";
+
   return (
-    <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 space-y-3">
+    <div className={cn(
+      "rounded-xl p-4 border space-y-3 transition-colors",
+      isResolved ? "bg-green-500/5 border-green-500/10" : "bg-primary/5 border-primary/10"
+    )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-bold text-primary">
           <BrainCircuit className="w-4 h-4" />
-          AI Resolution Assistant
+          {isResolved ? "Resolution Summary" : "AI Resolution Assistant"}
         </div>
-        <Badge variant="outline" className="text-[10px] bg-background">
-          <Clock className="w-3 h-3 mr-1" />
-          {plan.expectedResolutionTime}
-        </Badge>
+        {!isResolved && (
+          <Badge variant="outline" className="text-[10px] bg-background">
+            <Clock className="w-3 h-3 mr-1" />
+            {plan.expectedResolutionTime}
+          </Badge>
+        )}
       </div>
 
       <div className="space-y-2">
-        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Suggested Steps:</div>
+        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+          {isResolved ? "Steps Taken:" : "Suggested Steps:"}
+        </div>
         <ul className="space-y-1.5">
           {plan.suggestedSteps.map((step: string, i: number) => (
             <li key={i} className="text-xs flex items-start gap-2 text-foreground/80">
-              <div className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+              <div className={cn(
+                "mt-1.5 w-1 h-1 rounded-full shrink-0",
+                isResolved ? "bg-green-500/40" : "bg-primary/40"
+              )} />
               {step}
             </li>
           ))}
         </ul>
       </div>
 
-      {urgency >= 4 && (
+      {!isResolved && urgency >= 4 && (
         <div className="pt-2 border-t border-primary/10">
           <div className="text-[11px] font-semibold text-destructive uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
@@ -80,6 +92,11 @@ function ResolutionAssistant({ id, urgency }: { id: number, urgency: number }) {
           </div>
         </div>
       )}
+
+      <div className="pt-2 border-t border-border/40 flex items-center gap-1.5 text-[9px] text-muted-foreground italic">
+        <Info className="w-2.5 h-2.5" />
+        Note: This guidance is AI-generated for assistive purposes only.
+      </div>
     </div>
   );
 }
