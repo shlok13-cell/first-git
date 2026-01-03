@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock, BrainCircuit, Info, Star, Volume2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock, BrainCircuit, Info, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_STATUS } from "@shared/schema";
@@ -405,38 +405,20 @@ export default function Admin() {
                           <span className="truncate">{complaint.location}</span>
                         </div>
                         
-                          <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground pt-2">
-                            <div className="flex flex-col gap-1 flex-1">
-                              <span className="flex items-center gap-1.5">
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                                  {complaint.name.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="font-medium text-foreground">{complaint.name}</span>
-                              </span>
-                              <span className="text-[10px] pl-7 opacity-70">
-                                Mob: {complaint.mobileNumber || "Not provided"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {complaint.voiceUrl && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="p-1.5 bg-primary/10 rounded-full text-primary hover:bg-primary/20 transition-colors">
-                                        <Volume2 className="w-3.5 h-3.5" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <audio controls className="h-8 w-40">
-                                        <source src={complaint.voiceUrl} type="audio/wav" />
-                                      </audio>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                              <span className="font-mono opacity-50">#{complaint.id}</span>
-                            </div>
+                        <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground pt-2">
+                          <div className="flex flex-col gap-1">
+                            <span className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
+                                {complaint.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="font-medium text-foreground">{complaint.name}</span>
+                            </span>
+                            <span className="text-[10px] pl-7 opacity-70">
+                              Mob: {complaint.mobileNumber || "Not provided"}
+                            </span>
                           </div>
+                          <span className="font-mono opacity-50">#{complaint.id}</span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
