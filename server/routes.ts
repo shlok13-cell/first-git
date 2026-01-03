@@ -3,6 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { routeGrievance } from "./routing_engine";
 
 function classifyComplaint(text: string) {
   const lower = text.toLowerCase();
@@ -37,9 +38,17 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       // Auto-classify the complaint
       const classification = classifyComplaint(input.complaintText);
       
+      // Run routing engine
+      const routing = routeGrievance(
+        classification.category,
+        classification.urgency,
+        input.location
+      );
+      
       const complaint = await storage.createComplaint({
         ...input,
-        ...classification
+        ...classification,
+        ...routing
       });
       
       res.json(complaint);

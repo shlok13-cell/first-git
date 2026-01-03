@@ -7,14 +7,30 @@ const sqlite = new Database("sqlite.db");
 export const db = drizzle(sqlite);
 
 export interface IStorage {
-  createComplaint(complaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint>;
+  createComplaint(complaint: InsertComplaint & { 
+    category: string, 
+    urgency: number, 
+    department: string,
+    primaryDepartment?: string,
+    secondaryDepartment?: string | null,
+    routingConfidence?: string,
+    routingReason?: string
+  }): Promise<Complaint>;
   getComplaints(): Promise<Complaint[]>;
   updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined>;
   getComplaintsByIdentity(name: string, mobileNumber: string): Promise<Complaint[]>;
 }
 
 export class SqliteStorage implements IStorage {
-  async createComplaint(insertComplaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint> {
+  async createComplaint(insertComplaint: InsertComplaint & { 
+    category: string, 
+    urgency: number, 
+    department: string,
+    primaryDepartment?: string,
+    secondaryDepartment?: string | null,
+    routingConfidence?: string,
+    routingReason?: string
+  }): Promise<Complaint> {
     const [result] = await db.insert(complaints).values({
       ...insertComplaint,
       status: "Filed",
