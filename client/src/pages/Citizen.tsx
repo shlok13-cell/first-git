@@ -254,7 +254,12 @@ export default function Citizen() {
                           {complaint.status}
                         </Badge>
                       </div>
-                      <CardTitle className="text-lg">{complaint.category}</CardTitle>
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{complaint.category}</CardTitle>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          Filed by: {complaint.name}
+                        </p>
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <StatusTimeline currentStatus={complaint.status} />

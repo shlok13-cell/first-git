@@ -297,7 +297,7 @@ export default function Admin() {
                           <span className="font-medium text-foreground">{complaint.name}</span>
                         </span>
                         <span className="text-[10px] pl-7 opacity-70">
-                          Mob: {complaint.mobileNumber}
+                          Mob: {complaint.mobileNumber || "Not provided"}
                         </span>
                       </div>
                       <span className="font-mono opacity-50">#{complaint.id}</span>
