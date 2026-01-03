@@ -6,8 +6,8 @@ export function Navigation() {
   const [location] = useLocation();
 
   const links = [
-    { href: "/", label: "Submit Grievance", icon: FileText },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/citizen", label: "Submit Grievance", icon: FileText },
+    { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard },
   ];
 
   return (

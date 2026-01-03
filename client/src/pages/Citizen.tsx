@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Send } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function Home() {
+export default function Citizen() {
   const { mutate, isPending } = useCreateComplaint();
 
   const form = useForm<InsertComplaint>({
