@@ -1,10 +1,10 @@
-import { useComplaints, useUpdateComplaintStatus } from "@/hooks/use-complaints";
+import { useComplaints, useUpdateComplaintStatus, useUpdateComplaintDepartment } from "@/hooks/use-complaints";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock, BrainCircuit, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_STATUS } from "@shared/schema";
@@ -13,6 +13,21 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const DEPARTMENTS = [
+  "General Administration",
+  "Water & Sanitation",
+  "Electricity Board",
+  "Transport & Roads",
+  "Public Health & Environment",
+  "Finance & Revenue",
+  "Emergency Response Unit",
+  "Police (Traffic)",
+  "Sanitation Department",
+  "Urban Planning",
+  "Public Works"
+];
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
 
@@ -131,6 +146,7 @@ export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { data: complaints, isLoading, error } = useComplaints(true);
   const updateStatus = useUpdateComplaintStatus();
+  const updateDepartment = useUpdateComplaintDepartment();
 
   const handleCorrectPin = () => {
     setIsAuthenticated(true);
@@ -277,10 +293,55 @@ export default function Admin() {
                     {complaint.complaintText}
                   </p>
                   
+                  {/* AI Routing Info */}
+                  <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        <BrainCircuit className="w-3.5 h-3.5" />
+                        AI Routing Details
+                      </div>
+                      <Badge variant="outline" className={cn(
+                        "text-[10px] px-1.5 py-0",
+                        complaint.routingConfidence === "High" ? "text-green-600 border-green-600/20" :
+                        complaint.routingConfidence === "Medium" ? "text-orange-600 border-orange-600/20" :
+                        "text-red-600 border-red-600/20"
+                      )}>
+                        {complaint.routingConfidence} Confidence
+                      </Badge>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-snug italic">
+                      {complaint.routingReason}
+                    </div>
+                    {complaint.secondaryDepartment && (
+                      <div className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        Secondary: {complaint.secondaryDepartment}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="pt-4 border-t border-border/50 space-y-3">
-                    <div className="flex items-center text-sm text-foreground/80">
-                      <Building2 className="w-4 h-4 mr-2 text-primary/70" />
-                      <span className="font-medium truncate">{complaint.department}</span>
+                    <div className="flex items-center justify-between text-sm text-foreground/80">
+                      <div className="flex items-center">
+                        <Building2 className="w-4 h-4 mr-2 text-primary/70" />
+                        <span className="font-medium truncate max-w-[120px]">{complaint.department}</span>
+                      </div>
+                      <Select
+                        defaultValue={complaint.department}
+                        onValueChange={(value) => updateDepartment.mutate({ id: complaint.id, department: value })}
+                        disabled={updateDepartment.isPending}
+                      >
+                        <SelectTrigger className="w-[120px] h-8 text-[10px] bg-secondary/50 border-none">
+                          <SelectValue placeholder="Reassign" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DEPARTMENTS.map((dept) => (
+                            <SelectItem key={dept} value={dept} className="text-[10px]">
+                              {dept}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="flex items-center text-sm text-muted-foreground">

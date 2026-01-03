@@ -52,6 +52,42 @@ export function useCreateComplaint() {
   });
 }
 
+export function useUpdateComplaintDepartment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, department }: { id: number; department: string }) => {
+      const res = await fetch(`/api/admin/complaints/${id}/department`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ department }),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to update department");
+      }
+      
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/citizen/complaints"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/complaints"] });
+      toast({
+        title: "Department Updated",
+        description: "The complaint has been reassigned successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 export function useUpdateComplaintStatus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
