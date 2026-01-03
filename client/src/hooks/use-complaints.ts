@@ -3,11 +3,12 @@ import { api } from "@shared/routes";
 import { type InsertComplaint } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
-export function useComplaints() {
+export function useComplaints(isAdmin = false) {
+  const path = isAdmin ? "/api/admin/complaints" : "/api/citizen/complaints";
   return useQuery({
-    queryKey: [api.complaints.list.path],
+    queryKey: [path],
     queryFn: async () => {
-      const res = await fetch(api.complaints.list.path);
+      const res = await fetch(path);
       if (!res.ok) throw new Error("Failed to fetch complaints");
       return api.complaints.list.responses[200].parse(await res.json());
     },
@@ -20,7 +21,7 @@ export function useCreateComplaint() {
 
   return useMutation({
     mutationFn: async (data: InsertComplaint) => {
-      const res = await fetch(api.complaints.create.path, {
+      const res = await fetch("/api/citizen/complaints", {
         method: api.complaints.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -33,7 +34,8 @@ export function useCreateComplaint() {
       return api.complaints.create.responses[200].parse(await res.json());
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [api.complaints.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/citizen/complaints"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/complaints"] });
       toast({
         title: "Complaint Submitted",
         description: `Reference ID: #${data.id} - Urgency: ${data.urgency}/5`,
@@ -56,7 +58,7 @@ export function useUpdateComplaintStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await fetch(api.complaints.updateStatus.path.replace(":id", id.toString()), {
+      const res = await fetch(`/api/admin/complaints/${id}/status`, {
         method: api.complaints.updateStatus.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -69,7 +71,8 @@ export function useUpdateComplaintStatus() {
       return api.complaints.updateStatus.responses[200].parse(await res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.complaints.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/citizen/complaints"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/complaints"] });
       toast({
         title: "Status Updated",
         description: "The complaint status has been updated successfully.",

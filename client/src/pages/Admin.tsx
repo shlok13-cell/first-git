@@ -64,7 +64,7 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
 
 export default function Admin() {
   const [, setLocation] = useLocation();
-  const { data: complaints, isLoading, error } = useComplaints();
+  const { data: complaints, isLoading, error } = useComplaints(true);
   const updateStatus = useUpdateComplaintStatus();
 
   // Soft Admin Access Guard: Check for role in localStorage

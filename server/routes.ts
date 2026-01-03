@@ -29,7 +29,8 @@ function classifyComplaint(text: string) {
 }
 
 export async function registerRoutes(httpServer: Server, app: Express) {
-  app.post(api.complaints.create.path, async (req, res) => {
+  // Citizen Routes
+  app.post("/api/citizen/complaints", async (req, res) => {
     try {
       const input = api.complaints.create.input.parse(req.body);
       
@@ -51,12 +52,18 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
-  app.get(api.complaints.list.path, async (req, res) => {
+  app.get("/api/citizen/complaints", async (req, res) => {
     const complaints = await storage.getComplaints();
     res.json(complaints);
   });
 
-  app.patch("/api/complaints/:id/status", async (req, res) => {
+  // Admin Routes
+  app.get("/api/admin/complaints", async (req, res) => {
+    const complaints = await storage.getComplaints();
+    res.json(complaints);
+  });
+
+  app.patch("/api/admin/complaints/:id/status", async (req, res) => {
     // Force JSON response
     res.setHeader('Content-Type', 'application/json');
     try {
