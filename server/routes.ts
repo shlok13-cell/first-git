@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { routeGrievance } from "./routing_engine";
+import { getResolutionPlan } from "./resolution_assistant";
 
 function classifyComplaint(text: string) {
   const lower = text.toLowerCase();
@@ -144,6 +145,30 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       return res.json(updated);
     } catch (err) {
       console.error("Error updating complaint department:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/complaints/:id/resolution-plan", async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+      const { id } = req.params;
+      const complaints = await storage.getComplaints();
+      const complaint = complaints.find(c => c.id === Number(id));
+
+      if (!complaint) {
+        return res.status(404).json({ message: "Complaint not found" });
+      }
+
+      const plan = getResolutionPlan(
+        complaint.category,
+        complaint.urgency,
+        complaint.department
+      );
+
+      return res.json(plan);
+    } catch (err) {
+      console.error("Error getting resolution plan:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
   });

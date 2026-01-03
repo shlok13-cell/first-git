@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useQuery } from "@tanstack/react-query";
 
 const DEPARTMENTS = [
   "General Administration",
@@ -30,6 +31,58 @@ const DEPARTMENTS = [
 ];
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
+
+function ResolutionAssistant({ id, urgency }: { id: number, urgency: number }) {
+  const { data: plan, isLoading } = useQuery({
+    queryKey: [`/api/admin/complaints/${id}/resolution-plan`],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/complaints/${id}/resolution-plan`);
+      if (!res.ok) throw new Error("Failed to fetch resolution plan");
+      return res.json();
+    }
+  });
+
+  if (isLoading || !plan) return <Skeleton className="h-24 w-full rounded-xl" />;
+
+  return (
+    <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-bold text-primary">
+          <BrainCircuit className="w-4 h-4" />
+          AI Resolution Assistant
+        </div>
+        <Badge variant="outline" className="text-[10px] bg-background">
+          <Clock className="w-3 h-3 mr-1" />
+          {plan.expectedResolutionTime}
+        </Badge>
+      </div>
+
+      <div className="space-y-2">
+        <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Suggested Steps:</div>
+        <ul className="space-y-1.5">
+          {plan.suggestedSteps.map((step: string, i: number) => (
+            <li key={i} className="text-xs flex items-start gap-2 text-foreground/80">
+              <div className="mt-1.5 w-1 h-1 rounded-full bg-primary/40 shrink-0" />
+              {step}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {urgency >= 4 && (
+        <div className="pt-2 border-t border-primary/10">
+          <div className="text-[11px] font-semibold text-destructive uppercase tracking-wider flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            Escalation Advice:
+          </div>
+          <div className="text-xs text-destructive/90 mt-1 font-medium italic">
+            {plan.escalationAdvice}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = STATUS_STEPS.indexOf(currentStatus);
@@ -329,6 +382,9 @@ export default function Admin() {
                           </div>
                         )}
                       </div>
+
+                      {/* AI Resolution Assistant */}
+                      <ResolutionAssistant id={complaint.id} urgency={complaint.urgency} />
 
                       <div className="pt-4 border-t border-border/50 space-y-3">
                         <div className="flex items-center justify-between text-sm text-foreground/80">
