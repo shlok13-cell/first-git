@@ -1,13 +1,13 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertComplaintSchema, type InsertComplaint, type Complaint } from "@shared/schema";
-import { useCreateComplaint } from "@/hooks/use-complaints";
+import { useCreateComplaint, useSubmitFeedback } from "@/hooks/use-complaints";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock } from "lucide-react";
+import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -109,9 +109,6 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
     </div>
   );
 }
-
-import { Star, Loader2 } from "lucide-react";
-import { useSubmitFeedback } from "@/hooks/use-complaints";
 
 function SatisfactionFeedback({ complaint }: { complaint: Complaint }) {
   const [rating, setRating] = useState<number>(0);
