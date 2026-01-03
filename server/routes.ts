@@ -38,12 +38,23 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       // Auto-classify the complaint
       const classification = classifyComplaint(input.complaintText);
       
-      // Run routing engine
-      const routing = routeGrievance(
-        classification.category,
-        classification.urgency,
-        input.location
-      );
+      // Run routing engine with fault-tolerance
+      let routing;
+      try {
+        routing = routeGrievance(
+          classification.category,
+          classification.urgency,
+          input.location
+        );
+      } catch (err) {
+        console.error("Routing engine failed, using fallback:", err);
+        routing = {
+          primaryDepartment: "Municipal Corporation",
+          secondaryDepartment: null,
+          routingConfidence: "Low",
+          routingReason: "Fallback routing"
+        };
+      }
       
       const complaint = await storage.createComplaint({
         ...input,
