@@ -68,6 +68,7 @@ export default function Admin() {
   const updateStatus = useUpdateComplaintStatus();
 
   // Soft Admin Access Guard: Check for role in localStorage
+  // This is a prototype guard for demonstration purposes.
   // To enable admin mode manually, run in console: localStorage.setItem('role', 'admin')
   useEffect(() => {
     const role = localStorage.getItem("role");
@@ -75,6 +76,11 @@ export default function Admin() {
       setLocation("/citizen");
     }
   }, [setLocation]);
+
+  // Double check if we should show content if redirect is about to happen
+  if (localStorage.getItem("role") !== "admin") {
+    return null;
+  }
 
   // Calculate analytics from existing complaints data
   const stats = {
