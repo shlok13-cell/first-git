@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock, Star } from "lucide-react";
+import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock, Star, Mic, StopCircle, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
@@ -331,6 +331,16 @@ function TrackingPanel() {
                     <SLAStatus complaint={complaint} />
                     <StatusTimeline currentStatus={complaint.status} />
                     
+                    {complaint.voiceUrl && (
+                      <div className="p-3 bg-primary/5 rounded-lg flex items-center gap-3 border border-primary/10">
+                        <Volume2 className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-medium">Voice grievance attached</span>
+                        <audio controls className="h-8 flex-1 ml-auto">
+                          <source src={complaint.voiceUrl} type="audio/wav" />
+                        </audio>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm">
                       <div className="space-y-1">
                         <span className="text-muted-foreground block text-[10px] uppercase font-bold">Reporting Person</span>
@@ -356,6 +366,108 @@ function TrackingPanel() {
         </div>
       )}
     </motion.div>
+  );
+}
+
+// Voice Recording Component
+function VoiceRecorder({ onTranscribed }: { onTranscribed: (text: string, audioUrl?: string) => void }) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const chunks = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder.current = new MediaRecorder(stream);
+      chunks.current = [];
+
+      mediaRecorder.current.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.current.push(e.data);
+      };
+
+      mediaRecorder.current.onstop = async () => {
+        const audioBlob = new Blob(chunks.current, { type: 'audio/wav' });
+        setIsTranscribing(true);
+        
+        // Simple Browser Speech Recognition for conversion
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          onTranscribed("Voice transcription pending (Browser speech API not supported)", "");
+          setIsTranscribing(false);
+          return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event: any) => {
+          const text = event.results[0][0].transcript;
+          // In a real app, we would upload the blob to storage and get a URL
+          // For now we use a data URL as a placeholder
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = () => {
+            onTranscribed(text, reader.result as string);
+            setIsTranscribing(false);
+          };
+        };
+
+        recognition.onerror = () => {
+          onTranscribed("Voice transcription pending", "");
+          setIsTranscribing(false);
+        };
+
+        recognition.start();
+      };
+
+      mediaRecorder.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Microphone access denied", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder.current && isRecording) {
+      mediaRecorder.current.stop();
+      setIsRecording(false);
+      mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
+      <div className="flex-1">
+        <h4 className="text-sm font-semibold flex items-center gap-2">
+          <Mic className="w-4 h-4 text-primary" />
+          Optional Voice Note
+        </h4>
+        <p className="text-xs text-muted-foreground">Record your grievance instead of typing</p>
+      </div>
+      
+      {isTranscribing ? (
+        <div className="flex items-center gap-2 text-primary animate-pulse">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-xs font-medium">Transcribing...</span>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant={isRecording ? "destructive" : "outline"}
+          size="sm"
+          onClick={isRecording ? stopRecording : startRecording}
+          className={cn("rounded-full", isRecording && "animate-pulse")}
+        >
+          {isRecording ? (
+            <StopCircle className="w-4 h-4 mr-2" />
+          ) : (
+            <Mic className="w-4 h-4 mr-2" />
+          )}
+          {isRecording ? "Stop" : "Record"}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -471,23 +583,35 @@ export default function Citizen() {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="complaintText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground/80">Description of Issue</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Please describe the issue in detail..." 
-                          className="min-h-[160px] resize-none bg-background/50 focus:bg-background transition-colors text-base leading-relaxed"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="complaintText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/80">Description of Issue</FormLabel>
+                        <FormControl>
+                          <div className="space-y-4">
+                            <VoiceRecorder 
+                              onTranscribed={(text, audioUrl) => {
+                                field.onChange(text);
+                                if (audioUrl) {
+                                  // Add voice metadata to form state implicitly
+                                  form.setValue('transcription' as any, text);
+                                  form.setValue('voiceUrl' as any, audioUrl);
+                                }
+                              }} 
+                            />
+                            <Textarea 
+                              placeholder="Please describe the issue in detail..." 
+                              className="min-h-[160px] resize-none bg-background/50 focus:bg-background transition-colors text-base leading-relaxed"
+                              {...field} 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                 <div className="pt-4">
                   <Button 

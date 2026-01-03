@@ -21,6 +21,8 @@ export const complaints = sqliteTable("complaints", {
   routingConfidence: text("routing_confidence"),
   routingReason: text("routing_reason"),
   status: text("status").notNull().default("Filed"),
+  voiceUrl: text("voice_url"),
+  transcription: text("transcription"),
   feedbackRating: integer("feedback_rating"),
   feedbackComment: text("feedback_comment"),
   feedbackSubmittedAt: text("feedback_submitted_at"),
@@ -32,6 +34,8 @@ export const insertComplaintSchema = createInsertSchema(complaints).pick({
   mobileNumber: true,
   location: true,
   complaintText: true,
+  voiceUrl: true,
+  transcription: true,
 });
 
 export type Complaint = typeof complaints.$inferSelect;

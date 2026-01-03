@@ -38,8 +38,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       const input = api.complaints.create.input.parse(req.body);
       
       // Auto-classify the complaint
-      const nlpAnalysis = analyzeGrievance(input.complaintText);
-      const classification = classifyComplaint(input.complaintText);
+      const nlpAnalysis = analyzeGrievance(input.transcription || input.complaintText);
+      const classification = classifyComplaint(input.transcription || input.complaintText);
       
       // Override department based on NLP confidence
       let finalDepartment = classification.department;
