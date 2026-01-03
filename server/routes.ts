@@ -38,12 +38,20 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       const input = api.complaints.create.input.parse(req.body);
       
       // Auto-classify the complaint
-      const nlpAnalysis = analyzeGrievance(input.transcription || input.complaintText);
-      const classification = classifyComplaint(input.transcription || input.complaintText);
+      const transcriptionText = (req.body as any).transcription || input.complaintText;
+      const nlpAnalysis = analyzeGrievance(transcriptionText);
+      const classification = classifyComplaint(transcriptionText);
       
       // Override department based on NLP confidence
       let finalDepartment = classification.department;
-      if (nlpAnalysis.confidenceScore >= 40) {
+      let routingConfidence = nlpAnalysis.confidenceScore >= 40 ? "High" : "Low";
+      let routingReason = nlpAnalysis.confidenceScore >= 40 ? "NLP Analysis" : "Low confidence routing";
+
+      if (input.transcription === "Unable to transcribe audio") {
+        routingConfidence = "Low";
+        routingReason = "Voice transcription unavailable";
+        finalDepartment = "Manual Review";
+      } else if (nlpAnalysis.confidenceScore >= 40) {
         finalDepartment = nlpAnalysis.detectedDepartment;
       } else {
         finalDepartment = "Manual Review";
@@ -59,6 +67,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
         );
         // Use NLP determined department if confidence is high enough
         routing.primaryDepartment = finalDepartment;
+        routing.routingConfidence = routingConfidence;
+        routing.routingReason = routingReason;
       } catch (err) {
         console.error("Routing engine failed, using fallback:", err);
         routing = {

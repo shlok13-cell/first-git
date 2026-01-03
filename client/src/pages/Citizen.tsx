@@ -603,10 +603,12 @@ export default function Citizen() {
                           <div className="space-y-4">
                             <VoiceRecorder 
                               onTranscribed={(text, audioUrl) => {
-                                field.onChange(text);
+                                // If transcription failed or is empty
+                                const finalTranscription = text || "Unable to transcribe audio";
+                                field.onChange(finalTranscription);
                                 if (audioUrl) {
                                   // Add voice metadata to form state implicitly
-                                  form.setValue('transcription' as any, text);
+                                  form.setValue('transcription' as any, finalTranscription);
                                   form.setValue('voiceUrl' as any, audioUrl);
                                 }
                               }} 
