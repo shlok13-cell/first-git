@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock, BrainCircuit, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock, BrainCircuit, Info, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_STATUS } from "@shared/schema";
@@ -480,6 +480,41 @@ export default function Admin() {
                         {complaint.location}
                       </div>
                     </div>
+
+                    {/* Citizen Feedback Block */}
+                    {complaint.feedbackRating && (
+                      <div className="mt-4 pt-3 border-t border-border/50">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-bold text-primary flex items-center gap-1 uppercase tracking-wider">
+                            <Star className="w-2.5 h-2.5 fill-primary" />
+                            Citizen Feedback
+                          </span>
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={cn(
+                                  "w-2.5 h-2.5",
+                                  i < (complaint.feedbackRating || 0)
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-muted"
+                                )}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {complaint.feedbackComment && (
+                          <p className="text-[11px] text-foreground/90 bg-primary/5 p-2 rounded-lg border border-primary/10 leading-relaxed">
+                            {complaint.feedbackComment}
+                          </p>
+                        )}
+                        {complaint.feedbackSubmittedAt && (
+                          <div className="text-[9px] text-muted-foreground mt-1.5 text-right italic">
+                            Submitted on {new Date(complaint.feedbackSubmittedAt).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
