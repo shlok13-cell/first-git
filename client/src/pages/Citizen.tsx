@@ -400,6 +400,8 @@ function VoiceRecorder({ onTranscribed }: { onTranscribed: (text: string, audioU
 
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
         
         recognition.onresult = (event: any) => {
           const text = event.results[0][0].transcript;
@@ -413,8 +415,16 @@ function VoiceRecorder({ onTranscribed }: { onTranscribed: (text: string, audioU
           };
         };
 
+        recognition.onend = () => {
+          if (isTranscribing) {
+             // Fallback if no result was processed
+             onTranscribed("Unable to transcribe audio", "");
+             setIsTranscribing(false);
+          }
+        };
+
         recognition.onerror = () => {
-          onTranscribed("Voice transcription pending", "");
+          onTranscribed("Unable to transcribe audio", "");
           setIsTranscribing(false);
         };
 
