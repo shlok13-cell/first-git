@@ -6,6 +6,7 @@ import { z } from "zod";
 import { routeGrievance } from "./routing_engine";
 import { getResolutionPlan } from "./resolution_assistant";
 import { analyzeGrievance } from "./services/nlp";
+import { normalizeLanguage } from "./services/languageNormalizer";
 
 function classifyComplaint(text: string) {
   const lower = text.toLowerCase();
@@ -38,8 +39,9 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       const input = api.complaints.create.input.parse(req.body);
       
       // Auto-classify the complaint
-      const nlpAnalysis = analyzeGrievance(input.complaintText);
-      const classification = classifyComplaint(input.complaintText);
+      const normalization = await normalizeLanguage(input.complaintText);
+      const nlpAnalysis = analyzeGrievance(normalization.normalizedText);
+      const classification = classifyComplaint(normalization.normalizedText);
       
       // Override department based on NLP confidence
       let finalDepartment = classification.department;
@@ -72,7 +74,10 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       const complaint = await storage.createComplaint({
         ...input,
         ...classification,
-        ...routing
+        ...routing,
+        normalizedText: normalization.normalizedText,
+        detectedLanguage: normalization.detectedLanguage,
+        translationConfidence: normalization.confidence
       });
       
       res.json(complaint);

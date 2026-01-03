@@ -14,7 +14,10 @@ export interface IStorage {
     primaryDepartment?: string,
     secondaryDepartment?: string | null,
     routingConfidence?: string,
-    routingReason?: string
+    routingReason?: string,
+    normalizedText?: string,
+    detectedLanguage?: string,
+    translationConfidence?: number
   }): Promise<Complaint>;
   getComplaints(): Promise<Complaint[]>;
   updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined>;
@@ -31,7 +34,10 @@ export class SqliteStorage implements IStorage {
     primaryDepartment?: string,
     secondaryDepartment?: string | null,
     routingConfidence?: string,
-    routingReason?: string
+    routingReason?: string,
+    normalizedText?: string,
+    detectedLanguage?: string,
+    translationConfidence?: number
   }): Promise<Complaint> {
     const [result] = await db.insert(complaints).values({
       ...insertComplaint,
