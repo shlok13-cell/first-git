@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock, Star } from "lucide-react";
+import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock, Star, Mic, MicOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
@@ -188,12 +188,18 @@ function SatisfactionFeedback({ complaint }: { complaint: Complaint }) {
                 </button>
               ))}
             </div>
-            <Textarea
-              placeholder="Tell us more about your experience (optional)..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              className="resize-none bg-white/50"
-            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Feedback</span>
+                <VoiceInput onSpeech={(text) => setFeedback(prev => prev ? `${prev} ${text}` : text)} />
+              </div>
+              <Textarea
+                placeholder="Tell us more about your experience (optional)..."
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                className="resize-none bg-white/50"
+              />
+            </div>
             <Button 
               type="submit" 
               className="w-full" 
@@ -206,6 +212,100 @@ function SatisfactionFeedback({ complaint }: { complaint: Complaint }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function VoiceInput({ onSpeech }: { onSpeech: (text: string) => void }) {
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        onSpeech(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+        if (event.error !== 'no-speech') {
+          toast({
+            title: "Voice Input Error",
+            description: `Could not process voice: ${event.error}`,
+            variant: "destructive",
+          });
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [onSpeech, toast]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not Supported",
+        description: "Your browser does not support speech recognition.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error('Failed to start recognition', err);
+        setIsListening(false);
+      }
+    }
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={toggleListening}
+      className={cn(
+        "h-8 px-2 gap-1.5 transition-all duration-300",
+        isListening ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+      )}
+      data-testid="button-voice-input"
+    >
+      {isListening ? (
+        <>
+          <Mic className="w-3.5 h-3.5 animate-pulse" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Listening...</span>
+        </>
+      ) : (
+        <>
+          <Mic className="w-3.5 h-3.5" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Start Voice Input</span>
+        </>
+      )}
+    </Button>
   );
 }
 
@@ -476,7 +576,15 @@ export default function Citizen() {
                   name="complaintText"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-foreground/80">Description of Issue</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel className="text-foreground/80">Description of Issue</FormLabel>
+                        <VoiceInput 
+                          onSpeech={(text) => {
+                            const currentVal = form.getValues("complaintText");
+                            form.setValue("complaintText", currentVal ? `${currentVal} ${text}` : text);
+                          }} 
+                        />
+                      </div>
                       <FormControl>
                         <Textarea 
                           placeholder="Please describe the issue in detail..." 
