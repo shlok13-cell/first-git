@@ -17,8 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
 
-import { MapPin, Check, History, Search, Clock } from "lucide-react";
-
 function SLAStatus({ complaint }: { complaint: Complaint }) {
   const statusInfo = useMemo(() => {
     const created = new Date(complaint.createdAt || new Date());
