@@ -1,5 +1,5 @@
 
-export type UrgencyLevel = "Low" | "Medium" | "High" | "Critical";
+export type UrgencyLevel = "Low" | "Medium" | "High" | "Critical" | number;
 export type ConfidenceLevel = "High" | "Medium" | "Low";
 
 export interface RoutingResult {

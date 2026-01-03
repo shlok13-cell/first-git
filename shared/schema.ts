@@ -16,6 +16,10 @@ export const complaints = sqliteTable("complaints", {
   category: text("category").notNull(),
   urgency: integer("urgency").notNull(),
   department: text("department").notNull(),
+  primaryDepartment: text("primary_department"),
+  secondaryDepartment: text("secondary_department"),
+  routingConfidence: text("routing_confidence"),
+  routingReason: text("routing_reason"),
   status: text("status").notNull().default("Filed"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
