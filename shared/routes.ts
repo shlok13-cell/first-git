@@ -29,6 +29,17 @@ export const api = {
         404: z.object({ message: z.string() }),
       },
     },
+    track: {
+      method: 'POST' as const,
+      path: '/api/citizen/track',
+      input: z.object({
+        name: z.string(),
+        mobileNumber: z.string(),
+      }),
+      responses: {
+        200: z.array(z.custom<typeof complaints.$inferSelect>()),
+      },
+    },
   },
 };
 

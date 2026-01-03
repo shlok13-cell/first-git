@@ -1,7 +1,7 @@
 import { type Complaint, type InsertComplaint, type ComplaintStatus, complaints } from "@shared/schema";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const sqlite = new Database("sqlite.db");
 export const db = drizzle(sqlite);
@@ -10,6 +10,7 @@ export interface IStorage {
   createComplaint(complaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint>;
   getComplaints(): Promise<Complaint[]>;
   updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined>;
+  getComplaintsByIdentity(name: string, mobileNumber: string): Promise<Complaint[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -31,6 +32,12 @@ export class SqliteStorage implements IStorage {
       .where(eq(complaints.id, id))
       .returning();
     return updated;
+  }
+
+  async getComplaintsByIdentity(name: string, mobileNumber: string): Promise<Complaint[]> {
+    return await db.select()
+      .from(complaints)
+      .where(sql`${complaints.name} = ${name} AND ${complaints.mobileNumber} = ${mobileNumber}`);
   }
 }
 

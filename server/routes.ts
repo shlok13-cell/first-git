@@ -57,6 +57,20 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     res.json(complaints);
   });
 
+  app.post("/api/citizen/track", async (req, res) => {
+    try {
+      const { name, mobileNumber } = api.complaints.track.input.parse(req.body);
+      const complaints = await storage.getComplaintsByIdentity(name, mobileNumber);
+      res.json(complaints);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid input data", errors: err.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
   // Admin Routes
   app.get("/api/admin/complaints", async (req, res) => {
     const complaints = await storage.getComplaints();
