@@ -56,23 +56,31 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     res.json(complaints);
   });
 
-  app.patch(api.complaints.updateStatus.path, async (req, res) => {
+  app.patch("/api/complaints/:id/status", async (req, res) => {
+    // Force JSON response
+    res.setHeader('Content-Type', 'application/json');
     try {
       const { id } = req.params;
-      const { status } = api.complaints.updateStatus.input.parse(req.body);
+      const parsed = api.complaints.updateStatus.input.safeParse(req.body);
       
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid status", 
+          errors: parsed.error.errors 
+        });
+      }
+
+      const { status } = parsed.data;
       const updated = await storage.updateComplaintStatus(Number(id), status);
+      
       if (!updated) {
         return res.status(404).json({ message: "Complaint not found" });
       }
       
-      res.json(updated);
+      return res.json(updated);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid status", errors: err.errors });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
+      console.error("Error updating complaint status:", err);
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 
