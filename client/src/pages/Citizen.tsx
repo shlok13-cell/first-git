@@ -7,15 +7,65 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Send, Building2, MapPin, Check, History, Search } from "lucide-react";
+import { Loader2, Send, Building2, MapPin, Check, History, Search, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
+
+import { MapPin, Check, History, Search, Clock } from "lucide-react";
+
+function SLAStatus({ complaint }: { complaint: Complaint }) {
+  const statusInfo = useMemo(() => {
+    const created = new Date(complaint.createdAt || new Date());
+    // Assume standard 3-day SLA (259200000 ms)
+    const SLA_MS = 3 * 24 * 60 * 60 * 1000;
+    const estimatedResolution = new Date(created.getTime() + SLA_MS);
+    const now = new Date();
+
+    if (complaint.status === "Resolved") {
+      // In a real app, resolvedAt would be a field. Here we use current time for simulation.
+      const resolved = now; 
+      const duration = resolved.getTime() - created.getTime();
+      
+      let label = "Resolved On Time";
+      let color = "text-green-600 bg-green-50";
+      
+      if (duration < SLA_MS * 0.8) {
+        label = "Resolved Early";
+        color = "text-emerald-600 bg-emerald-50";
+      } else if (duration > SLA_MS) {
+        label = "Resolved Delayed";
+        color = "text-orange-600 bg-orange-50";
+      }
+      
+      return { label, color, estimated: estimatedResolution };
+    } else {
+      const isDelayed = now.getTime() > estimatedResolution.getTime();
+      return {
+        label: isDelayed ? "Delayed" : "On Track",
+        color: isDelayed ? "text-red-600 bg-red-50" : "text-blue-600 bg-blue-50",
+        estimated: estimatedResolution
+      };
+    }
+  }, [complaint]);
+
+  return (
+    <div className="flex items-center justify-between py-2 px-3 rounded-lg border bg-muted/20 text-[11px] mb-4">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Clock className="w-3.5 h-3.5" />
+        <span>Est. Resolution: {statusInfo.estimated.toLocaleDateString()}</span>
+      </div>
+      <Badge variant="outline" className={cn("border-none font-bold uppercase tracking-wider text-[9px] px-2 py-0.5", statusInfo.color)}>
+        {statusInfo.label}
+      </Badge>
+    </div>
+  );
+}
 
 function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = STATUS_STEPS.indexOf(currentStatus);
@@ -257,6 +307,7 @@ function TrackingPanel() {
                     <CardTitle className="text-lg">{complaint.category}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    <SLAStatus complaint={complaint} />
                     <StatusTimeline currentStatus={complaint.status} />
                     
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm">
