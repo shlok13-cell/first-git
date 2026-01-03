@@ -18,6 +18,7 @@ export interface IStorage {
   }): Promise<Complaint>;
   getComplaints(): Promise<Complaint[]>;
   updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined>;
+  setComplaintFeedback(id: number, feedback: { rating: number, comment?: string }): Promise<Complaint | undefined>;
   getComplaintsByIdentity(name: string, mobileNumber: string): Promise<Complaint[]>;
   updateComplaintDepartment(id: number, department: string): Promise<Complaint | undefined>;
 }
@@ -46,6 +47,18 @@ export class SqliteStorage implements IStorage {
   async updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined> {
     const [updated] = await db.update(complaints)
       .set({ status })
+      .where(eq(complaints.id, id))
+      .returning();
+    return updated;
+  }
+
+  async setComplaintFeedback(id: number, feedback: { rating: number, comment?: string }): Promise<Complaint | undefined> {
+    const [updated] = await db.update(complaints)
+      .set({
+        feedbackRating: feedback.rating,
+        feedbackComment: feedback.comment || null,
+        feedbackSubmittedAt: new Date().toISOString(),
+      })
       .where(eq(complaints.id, id))
       .returning();
     return updated;

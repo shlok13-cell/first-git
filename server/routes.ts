@@ -94,8 +94,19 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
   // Admin Routes
   app.get("/api/admin/complaints", async (req, res) => {
-    const complaints = await storage.getComplaints();
-    res.json(complaints);
+    try {
+      const complaints = await storage.getComplaints();
+      const sanitizedComplaints = complaints.map(c => ({
+        ...c,
+        feedbackRating: c.feedbackRating ?? null,
+        feedbackComment: c.feedbackComment ?? null,
+        feedbackSubmittedAt: c.feedbackSubmittedAt ?? null,
+      }));
+      res.json(sanitizedComplaints);
+    } catch (err) {
+      console.error("Error fetching admin complaints:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.patch("/api/admin/complaints/:id/status", async (req, res) => {
