@@ -58,6 +58,6 @@ export function analyzeGrievance(text: string): NlpResult {
   return {
     detectedDepartment,
     confidenceScore,
-    extractedKeywords: [...new Set(extractedKeywords)] // Return unique keywords
+    extractedKeywords: Array.from(new Set(extractedKeywords)) // Return unique keywords
   };
 }
