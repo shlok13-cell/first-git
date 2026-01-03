@@ -19,6 +19,7 @@ export interface IStorage {
   getComplaints(): Promise<Complaint[]>;
   updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined>;
   getComplaintsByIdentity(name: string, mobileNumber: string): Promise<Complaint[]>;
+  updateComplaintDepartment(id: number, department: string): Promise<Complaint | undefined>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -45,6 +46,14 @@ export class SqliteStorage implements IStorage {
   async updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined> {
     const [updated] = await db.update(complaints)
       .set({ status })
+      .where(eq(complaints.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateComplaintDepartment(id: number, department: string): Promise<Complaint | undefined> {
+    const [updated] = await db.update(complaints)
+      .set({ department })
       .where(eq(complaints.id, id))
       .returning();
     return updated;

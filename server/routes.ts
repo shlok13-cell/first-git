@@ -114,5 +114,28 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  app.patch("/api/admin/complaints/:id/department", async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+      const { id } = req.params;
+      const { department } = req.body;
+      
+      if (!department || typeof department !== 'string') {
+        return res.status(400).json({ message: "Invalid department" });
+      }
+
+      const updated = await storage.updateComplaintDepartment(Number(id), department);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Complaint not found" });
+      }
+      
+      return res.json(updated);
+    } catch (err) {
+      console.error("Error updating complaint department:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
