@@ -98,10 +98,12 @@ export default function Dashboard() {
   }
 
   const getUrgencyColor = (score: number) => {
-    if (score >= 4) return "bg-red-500/10 text-red-600 border-red-500/20";
+    if (score >= 4) return "bg-red-500/10 text-red-600 border-red-500/20 ring-2 ring-red-500/50";
     if (score === 3) return "bg-orange-500/10 text-orange-600 border-orange-500/20";
     return "bg-green-500/10 text-green-600 border-green-500/20";
   };
+
+  const sortedComplaints = complaints?.sort((a, b) => b.urgency - a.urgency);
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 bg-background min-h-screen">
@@ -144,7 +146,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {complaints?.length === 0 ? (
+      {!sortedComplaints || sortedComplaints.length === 0 ? (
         <div className="text-center py-20 bg-secondary/30 rounded-3xl border border-dashed border-border">
           <CheckCircle2 className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
           <h3 className="text-xl font-semibold text-foreground">No complaints yet</h3>
@@ -152,14 +154,17 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {complaints?.map((complaint, index) => (
+          {sortedComplaints.map((complaint, index) => (
             <motion.div
               key={complaint.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <Card className="h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 group bg-card">
+              <Card className={cn(
+                "h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 group bg-card",
+                complaint.urgency >= 4 && "border-red-500/50 shadow-lg shadow-red-500/5"
+              )}>
                 <CardHeader className="space-y-3 pb-4">
                   <div className="flex items-start justify-between gap-2">
                     <Badge 
