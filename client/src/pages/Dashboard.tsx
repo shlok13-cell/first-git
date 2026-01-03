@@ -1,4 +1,4 @@
-import { useComplaints } from "@/hooks/use-complaints";
+import { useComplaints, useUpdateComplaintStatus } from "@/hooks/use-complaints";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,9 +6,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { COMPLAINT_STATUS } from "@shared/schema";
 
 export default function Dashboard() {
   const { data: complaints, isLoading, error } = useComplaints();
+  const updateStatus = useUpdateComplaintStatus();
 
   if (isLoading) {
     return (
@@ -78,10 +81,22 @@ export default function Dashboard() {
                     >
                       Urgency: {complaint.urgency}/5
                     </Badge>
-                    <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 bg-secondary px-2 py-1 rounded-full">
-                      <Clock className="w-3 h-3" />
-                      Just now
-                    </span>
+                    <Select
+                      defaultValue={complaint.status}
+                      onValueChange={(value) => updateStatus.mutate({ id: complaint.id, status: value })}
+                      disabled={updateStatus.isPending}
+                    >
+                      <SelectTrigger className="w-[130px] h-8 text-xs bg-secondary/50 border-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMPLAINT_STATUS.map((status) => (
+                          <SelectItem key={status} value={status} className="text-xs">
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <CardTitle className="font-display text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
                     {complaint.category}

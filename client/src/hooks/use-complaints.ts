@@ -48,3 +48,38 @@ export function useCreateComplaint() {
     },
   });
 }
+
+export function useUpdateComplaintStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(api.complaints.updateStatus.path.replace(":id", id.toString()), {
+        method: api.complaints.updateStatus.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to update status");
+      }
+      
+      return api.complaints.updateStatus.responses[200].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.complaints.list.path] });
+      toast({
+        title: "Status Updated",
+        description: "The complaint status has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
