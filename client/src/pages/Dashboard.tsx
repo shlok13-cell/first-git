@@ -13,6 +13,14 @@ export default function Dashboard() {
   const { data: complaints, isLoading, error } = useComplaints();
   const updateStatus = useUpdateComplaintStatus();
 
+  // Calculate analytics from existing complaints data
+  const stats = {
+    total: complaints?.length || 0,
+    filed: complaints?.filter(c => c.status === "Filed").length || 0,
+    inProgress: complaints?.filter(c => c.status === "In Progress").length || 0,
+    resolved: complaints?.filter(c => c.status === "Resolved").length || 0,
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
@@ -56,6 +64,34 @@ export default function Dashboard() {
           Overview of all submitted grievances and their status.
         </p>
       </motion.div>
+
+      {/* Analytics Cards */}
+      <div className="grid gap-4 md:grid-cols-4 mb-8">
+        <Card className="bg-card hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-medium uppercase tracking-wider">Total Grievances</CardDescription>
+            <CardTitle className="text-2xl font-bold">{stats.total}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="bg-card hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-medium uppercase tracking-wider">Filed</CardDescription>
+            <CardTitle className="text-2xl font-bold">{stats.filed}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="bg-card hover:shadow-md transition-shadow border-l-4 border-l-orange-500">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-medium uppercase tracking-wider">In Progress</CardDescription>
+            <CardTitle className="text-2xl font-bold">{stats.inProgress}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="bg-card hover:shadow-md transition-shadow border-l-4 border-l-green-500">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-medium uppercase tracking-wider">Resolved</CardDescription>
+            <CardTitle className="text-2xl font-bold">{stats.resolved}</CardTitle>
+          </2xl>
+        </Card>
+      </div>
 
       {complaints?.length === 0 ? (
         <div className="text-center py-20 bg-secondary/30 rounded-3xl border border-dashed border-border">
