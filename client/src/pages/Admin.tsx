@@ -4,12 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check } from "lucide-react";
-import { motion } from "framer-motion";
+import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check, Lock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_STATUS } from "@shared/schema";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
 
@@ -31,7 +34,6 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
         {STATUS_STEPS.map((status, index) => {
           const isCompleted = index < currentIndex;
           const isActive = index === currentIndex;
-          const isPending = index > currentIndex;
 
           return (
             <div key={status} className="relative z-10 flex flex-col items-center">
@@ -62,24 +64,97 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   );
 }
 
+function PinModal({ onCorrectPin }: { onCorrectPin: () => void }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+  const [, setLocation] = useLocation();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Correct PIN: 1234
+    if (pin === "1234") {
+      onCorrectPin();
+    } else {
+      setError(true);
+      setPin("");
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={() => setLocation("/citizen")}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Lock className="w-5 h-5" />
+            Admin Access
+          </DialogTitle>
+          <DialogDescription>
+            Please enter the admin PIN to access the dashboard.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Enter 4-digit PIN"
+              value={pin}
+              onChange={(e) => {
+                setPin(e.target.value);
+                setError(false);
+              }}
+              maxLength={4}
+              className={cn("text-center text-2xl tracking-[1em]", error && "border-destructive")}
+              autoFocus
+            />
+            {error && (
+              <p className="text-sm text-destructive text-center font-medium animate-shake">
+                Incorrect PIN. Please try again.
+              </p>
+            )}
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setLocation("/citizen")}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1">
+              Verify PIN
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Admin() {
   const [, setLocation] = useLocation();
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("role") === "admin");
   const { data: complaints, isLoading, error } = useComplaints(true);
   const updateStatus = useUpdateComplaintStatus();
 
-  // Soft Admin Access Guard: Check for role in localStorage
-  // This is a prototype guard for demonstration purposes.
-  // To enable admin mode manually, run in console: localStorage.setItem('role', 'admin')
-  useEffect(() => {
-    const role = localStorage.getItem("role");
-    if (role !== "admin") {
-      setLocation("/citizen");
-    }
-  }, [setLocation]);
+  const handleCorrectPin = () => {
+    localStorage.setItem("role", "admin");
+    setIsAdmin(true);
+  };
 
-  // Double check if we should show content if redirect is about to happen
-  if (localStorage.getItem("role") !== "admin") {
-    return null;
+  if (!isAdmin) {
+    return <PinModal onCorrectPin={handleCorrectPin} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // Calculate analytics from existing complaints data
