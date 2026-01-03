@@ -123,3 +123,39 @@ export function useUpdateComplaintStatus() {
     },
   });
 }
+
+export function useSubmitFeedback() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, rating, comment }: { id: number; rating: number; comment?: string }) => {
+      const res = await fetch(`/api/citizen/complaints/${id}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, comment }),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to submit feedback");
+      }
+      
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/citizen/complaints"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/complaints"] });
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for your feedback!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Submission Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}

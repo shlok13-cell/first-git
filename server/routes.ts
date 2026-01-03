@@ -178,5 +178,27 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  app.post("/api/citizen/complaints/:id/feedback", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rating, comment } = req.body;
+
+      if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Invalid rating" });
+      }
+
+      const updated = await storage.setComplaintFeedback(Number(id), { rating, comment });
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Complaint not found" });
+      }
+
+      res.json(updated);
+    } catch (err) {
+      console.error("Error submitting feedback:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
