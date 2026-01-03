@@ -1,4 +1,10 @@
-import { type Complaint, type InsertComplaint, type ComplaintStatus } from "@shared/schema";
+import { type Complaint, type InsertComplaint, type ComplaintStatus, complaints } from "@shared/schema";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import { eq } from "drizzle-orm";
+
+const sqlite = new Database("sqlite.db");
+export const db = drizzle(sqlite);
 
 export interface IStorage {
   createComplaint(complaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint>;
@@ -6,38 +12,26 @@ export interface IStorage {
   updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private complaints: Map<number, Complaint>;
-  private currentId: number;
-
-  constructor() {
-    this.complaints = new Map();
-    this.currentId = 1;
-  }
-
+export class SqliteStorage implements IStorage {
   async createComplaint(insertComplaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint> {
-    const id = this.currentId++;
-    const complaint: Complaint = { 
-      ...insertComplaint, 
-      id,
-      status: "Filed" 
-    };
-    this.complaints.set(id, complaint);
-    return complaint;
+    const [result] = await db.insert(complaints).values({
+      ...insertComplaint,
+      status: "Filed",
+    }).returning();
+    return result;
   }
 
   async getComplaints(): Promise<Complaint[]> {
-    return Array.from(this.complaints.values());
+    return await db.select().from(complaints);
   }
 
   async updateComplaintStatus(id: number, status: ComplaintStatus): Promise<Complaint | undefined> {
-    const complaint = this.complaints.get(id);
-    if (!complaint) return undefined;
-    
-    const updated = { ...complaint, status };
-    this.complaints.set(id, updated);
+    const [updated] = await db.update(complaints)
+      .set({ status })
+      .where(eq(complaints.id, id))
+      .returning();
     return updated;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SqliteStorage();

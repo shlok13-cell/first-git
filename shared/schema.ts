@@ -1,12 +1,13 @@
-import { pgTable, text, integer, serial } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 
 export const COMPLAINT_STATUS = ["Filed", "Under Review", "In Progress", "Resolved"] as const;
 export type ComplaintStatus = (typeof COMPLAINT_STATUS)[number];
 
-export const complaints = pgTable("complaints", {
-  id: serial("id").primaryKey(),
+export const complaints = sqliteTable("complaints", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   mobileNumber: text("mobile_number").notNull(),
   location: text("location").notNull(),
@@ -16,6 +17,7 @@ export const complaints = pgTable("complaints", {
   urgency: integer("urgency").notNull(),
   department: text("department").notNull(),
   status: text("status").notNull().default("Filed"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const insertComplaintSchema = createInsertSchema(complaints).pick({
