@@ -4,10 +4,61 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_STATUS } from "@shared/schema";
+
+const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
+
+function StatusTimeline({ currentStatus }: { currentStatus: string }) {
+  const currentIndex = STATUS_STEPS.indexOf(currentStatus);
+
+  return (
+    <div className="w-full py-4 px-1">
+      <div className="relative flex justify-between">
+        {/* Background Line */}
+        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
+        
+        {/* Progress Line */}
+        <div 
+          className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0 transition-all duration-500"
+          style={{ width: `${(Math.max(0, currentIndex) / (STATUS_STEPS.length - 1)) * 100}%` }}
+        />
+
+        {STATUS_STEPS.map((status, index) => {
+          const isCompleted = index < currentIndex;
+          const isActive = index === currentIndex;
+          const isPending = index > currentIndex;
+
+          return (
+            <div key={status} className="relative z-10 flex flex-col items-center">
+              <div 
+                className={cn(
+                  "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300",
+                  isCompleted ? "bg-primary border-primary" : 
+                  isActive ? "bg-background border-primary scale-125 shadow-sm" : 
+                  "bg-background border-muted"
+                )}
+              >
+                {isCompleted && <Check className="w-2.5 h-2.5 text-primary-foreground stroke-[4]" />}
+                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+              </div>
+              <span 
+                className={cn(
+                  "absolute -bottom-5 text-[10px] font-medium whitespace-nowrap transition-colors",
+                  isActive ? "text-primary font-bold" : "text-muted-foreground"
+                )}
+              >
+                {status}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { data: complaints, isLoading, error } = useComplaints();
@@ -137,6 +188,7 @@ export default function Dashboard() {
                   <CardTitle className="font-display text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
                     {complaint.category}
                   </CardTitle>
+                  <StatusTimeline currentStatus={complaint.status} />
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
