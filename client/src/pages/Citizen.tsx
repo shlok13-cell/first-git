@@ -1,17 +1,19 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertComplaintSchema, type InsertComplaint } from "@shared/schema";
-import { useCreateComplaint, useComplaints } from "@/hooks/use-complaints";
+import { insertComplaintSchema, type InsertComplaint, type Complaint } from "@shared/schema";
+import { useCreateComplaint } from "@/hooks/use-complaints";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Send, Search, CheckCircle2, Clock, Building2, MapPin, Check } from "lucide-react";
+import { Loader2, Send, Building2, MapPin, Check, History, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
 
@@ -60,9 +62,154 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   );
 }
 
+function TrackingPanel() {
+  const [isTracking, setIsTracking] = useState(false);
+  const [results, setResults] = useState<Complaint[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      mobileNumber: "",
+    },
+  });
+
+  async function onTrack(data: { name: string; mobileNumber: string }) {
+    setIsLoading(true);
+    try {
+      const res = await apiRequest("POST", "/api/citizen/track", data);
+      const complaints = await res.json();
+      setResults(complaints);
+      if (complaints.length === 0) {
+        toast({
+          title: "No grievances found",
+          description: "We couldn't find any grievances matching the provided details.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to track grievances. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (!isTracking) {
+    return (
+      <div className="flex justify-center pt-8">
+        <Button 
+          variant="outline" 
+          size="lg"
+          onClick={() => setIsTracking(true)}
+          className="group hover:border-primary/50 transition-colors"
+        >
+          <History className="mr-2 h-5 w-5 group-hover:text-primary transition-colors" />
+          Track My Grievance
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-2xl mx-auto space-y-8 pt-8"
+    >
+      <Card className="border-primary/20 shadow-xl bg-white/90 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Track Your Grievances</CardTitle>
+              <CardDescription>Enter your details to see the status of your reported issues.</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => {
+              setIsTracking(false);
+              setResults(null);
+            }}>
+              Close
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onTrack)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Input placeholder="Full Name" {...form.register("name", { required: true })} />
+              </div>
+              <div className="space-y-2">
+                <Input placeholder="Mobile Number" {...form.register("mobileNumber", { required: true })} />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Search Grievances"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {results && results.length > 0 && (
+        <div className="grid gap-6">
+          <AnimatePresence mode="popLayout">
+            {results.map((complaint) => (
+              <motion.div
+                key={complaint.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className="border-primary/10 shadow-lg bg-white/50 backdrop-blur-sm">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <Badge variant="secondary" className="font-mono text-[10px] tracking-wider">
+                        REF: #{complaint.id}
+                      </Badge>
+                      <Badge className={cn(
+                        "capitalize",
+                        complaint.status === "Resolved" ? "bg-green-500/10 text-green-600 border-green-500/20" :
+                        complaint.status === "In Progress" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+                        "bg-orange-500/10 text-orange-600 border-orange-500/20"
+                      )}>
+                        {complaint.status}
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-lg">{complaint.category}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <StatusTimeline currentStatus={complaint.status} />
+                    
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm">
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground block text-[10px] uppercase font-bold">Reporting Person</span>
+                        <div className="font-medium">{complaint.name}</div>
+                        <div className="text-xs text-muted-foreground">{complaint.mobileNumber}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground block text-[10px] uppercase font-bold">Location</span>
+                        <div className="flex items-center text-muted-foreground">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          <span className="truncate">{complaint.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 export default function Citizen() {
   const { mutate, isPending } = useCreateComplaint();
-  const { data: allComplaints } = useComplaints();
   const [submittedIds, setSubmittedIds] = useState<number[]>([]);
 
   useEffect(() => {
@@ -71,8 +218,6 @@ export default function Citizen() {
       setSubmittedIds(JSON.parse(saved));
     }
   }, []);
-
-  const myComplaints = allComplaints?.filter(c => submittedIds.includes(c.id)) || [];
 
   const form = useForm<InsertComplaint>({
     resolver: zodResolver(insertComplaintSchema),
@@ -96,7 +241,7 @@ export default function Citizen() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] p-4 bg-gradient-to-b from-background to-secondary/20 space-y-12">
+    <div className="min-h-[calc(100vh-4rem)] p-4 bg-gradient-to-b from-background to-secondary/20 space-y-12 pb-20">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -216,72 +361,9 @@ export default function Citizen() {
             </Form>
           </CardContent>
         </Card>
+
+        <TrackingPanel />
       </motion.div>
-
-      {myComplaints.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="max-w-4xl mx-auto space-y-6"
-        >
-          <div className="flex items-center gap-2 px-2">
-            <Search className="w-5 h-5 text-primary" />
-            <h2 className="text-2xl font-bold">Track Your Grievances</h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <AnimatePresence mode="popLayout">
-              {myComplaints.map((complaint) => (
-                <motion.div
-                  key={complaint.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                >
-                  <Card className="h-full border-primary/10 shadow-lg hover:shadow-xl transition-shadow bg-white/50 backdrop-blur-sm">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <Badge variant="secondary" className="font-mono text-[10px] tracking-wider">
-                          REF: #{complaint.id}
-                        </Badge>
-                        <Badge className={cn(
-                          "capitalize",
-                          complaint.status === "Resolved" ? "bg-green-500/10 text-green-600 border-green-500/20" :
-                          complaint.status === "In Progress" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
-                          "bg-orange-500/10 text-orange-600 border-orange-500/20"
-                        )}>
-                          {complaint.status}
-                        </Badge>
-                      </div>
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{complaint.category}</CardTitle>
-                        <p className="text-xs text-muted-foreground font-medium">
-                          Filed by: {complaint.name}
-                        </p>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <StatusTimeline currentStatus={complaint.status} />
-                      
-                      <div className="space-y-2 pt-4 border-t">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Building2 className="w-4 h-4 mr-2" />
-                          <span>{complaint.department}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span>{complaint.location}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }
