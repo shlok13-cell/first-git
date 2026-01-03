@@ -401,7 +401,7 @@ export default function Admin() {
                       </div>
 
                       {/* AI Resolution Assistant */}
-                      <ResolutionAssistant id={complaint.id} urgency={complaint.urgency} />
+                      <ResolutionAssistant id={complaint.id} urgency={complaint.urgency} status={complaint.status} />
 
                       <div className="pt-4 border-t border-border/50 space-y-3">
                         <div className="flex items-center justify-between text-sm text-foreground/80">
@@ -491,6 +491,12 @@ export default function Admin() {
                     <p className="text-xs text-muted-foreground line-clamp-2 italic">
                       "{complaint.complaintText}"
                     </p>
+                    
+                    {/* Resolution Summary for Resolved Grievances */}
+                    <div className="mt-2">
+                      <ResolutionAssistant id={complaint.id} urgency={complaint.urgency} status={complaint.status} />
+                    </div>
+
                     <div className="flex items-center justify-between text-[10px] pt-2">
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Building2 className="w-3 h-3" />
