@@ -89,7 +89,7 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-medium uppercase tracking-wider">Resolved</CardDescription>
             <CardTitle className="text-2xl font-bold">{stats.resolved}</CardTitle>
-          </2xl>
+          </CardHeader>
         </Card>
       </div>
 
