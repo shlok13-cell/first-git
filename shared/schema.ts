@@ -8,6 +8,7 @@ export type ComplaintStatus = (typeof COMPLAINT_STATUS)[number];
 export const complaints = pgTable("complaints", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  mobileNumber: text("mobile_number").notNull(),
   location: text("location").notNull(),
   complaintText: text("complaint_text").notNull(),
   // Derived fields
@@ -19,6 +20,7 @@ export const complaints = pgTable("complaints", {
 
 export const insertComplaintSchema = createInsertSchema(complaints).pick({
   name: true,
+  mobileNumber: true,
   location: true,
   complaintText: true,
 });

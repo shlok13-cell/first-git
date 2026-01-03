@@ -78,6 +78,7 @@ export default function Citizen() {
     resolver: zodResolver(insertComplaintSchema),
     defaultValues: {
       name: "",
+      mobileNumber: "",
       location: "",
       complaintText: "",
     },
@@ -128,6 +129,24 @@ export default function Citizen() {
                         <FormControl>
                           <Input 
                             placeholder="John Doe" 
+                            {...field} 
+                            className="h-11 bg-background/50 focus:bg-background transition-colors"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/80">Mobile Number</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="+91 XXXXX XXXXX" 
                             {...field} 
                             className="h-11 bg-background/50 focus:bg-background transition-colors"
                           />

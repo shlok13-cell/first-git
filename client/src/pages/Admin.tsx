@@ -289,12 +289,17 @@ export default function Admin() {
                     </div>
                     
                     <div className="flex items-center justify-between mt-4 text-xs text-muted-foreground pt-2">
-                      <span className="flex items-center gap-1.5">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                          {complaint.name.charAt(0).toUpperCase()}
-                        </div>
-                        {complaint.name}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="flex items-center gap-1.5">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
+                            {complaint.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-foreground">{complaint.name}</span>
+                        </span>
+                        <span className="text-[10px] pl-7 opacity-70">
+                          Mob: {complaint.mobileNumber}
+                        </span>
+                      </div>
                       <span className="font-mono opacity-50">#{complaint.id}</span>
                     </div>
                   </div>
