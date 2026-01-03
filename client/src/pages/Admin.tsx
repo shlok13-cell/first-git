@@ -8,6 +8,8 @@ import { AlertCircle, CheckCircle2, Clock, MapPin, Tag, Building2, Check } from 
 import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { COMPLAINT_STATUS } from "@shared/schema";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 const STATUS_STEPS = ["Filed", "Under Review", "In Progress", "Resolved"];
 
@@ -61,8 +63,18 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
 }
 
 export default function Admin() {
+  const [, setLocation] = useLocation();
   const { data: complaints, isLoading, error } = useComplaints();
   const updateStatus = useUpdateComplaintStatus();
+
+  // Soft Admin Access Guard: Check for role in localStorage
+  // To enable admin mode manually, run in console: localStorage.setItem('role', 'admin')
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role !== "admin") {
+      setLocation("/citizen");
+    }
+  }, [setLocation]);
 
   // Calculate analytics from existing complaints data
   const stats = {
@@ -86,6 +98,11 @@ export default function Admin() {
         </div>
       </div>
     );
+  }
+
+  // Double check if we should show content if redirect is about to happen
+  if (localStorage.getItem("role") !== "admin") {
+    return null;
   }
 
   if (error) {
