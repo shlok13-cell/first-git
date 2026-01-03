@@ -5,6 +5,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { routeGrievance } from "./routing_engine";
 import { getResolutionPlan } from "./resolution_assistant";
+import { analyzeGrievance } from "./services/nlp";
 
 function classifyComplaint(text: string) {
   const lower = text.toLowerCase();
@@ -37,8 +38,17 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       const input = api.complaints.create.input.parse(req.body);
       
       // Auto-classify the complaint
+      const nlpAnalysis = analyzeGrievance(input.complaintText);
       const classification = classifyComplaint(input.complaintText);
       
+      // Override department based on NLP confidence
+      let finalDepartment = classification.department;
+      if (nlpAnalysis.confidenceScore >= 40) {
+        finalDepartment = nlpAnalysis.detectedDepartment;
+      } else {
+        finalDepartment = "Manual Review";
+      }
+
       // Run routing engine with fault-tolerance
       let routing;
       try {
@@ -47,6 +57,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           classification.urgency,
           input.location
         );
+        // Use NLP determined department if confidence is high enough
+        routing.primaryDepartment = finalDepartment;
       } catch (err) {
         console.error("Routing engine failed, using fallback:", err);
         routing = {
