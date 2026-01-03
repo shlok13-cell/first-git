@@ -373,33 +373,6 @@ export default function Admin() {
                         {complaint.complaintText}
                       </p>
                       
-                      {/* AI Routing Info */}
-                      <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                            <BrainCircuit className="w-3.5 h-3.5" />
-                            AI Routing Details
-                          </div>
-                          <Badge variant="outline" className={cn(
-                            "text-[10px] px-1.5 py-0",
-                            complaint.routingConfidence === "High" ? "text-green-600 border-green-600/20" :
-                            complaint.routingConfidence === "Medium" ? "text-orange-600 border-orange-600/20" :
-                            "text-red-600 border-red-600/20"
-                          )}>
-                            {complaint.routingConfidence} Confidence
-                          </Badge>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground leading-snug italic">
-                          {complaint.routingReason}
-                        </div>
-                        {complaint.secondaryDepartment && (
-                          <div className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
-                            <Info className="w-3 h-3" />
-                            Secondary: {complaint.secondaryDepartment}
-                          </div>
-                        )}
-                      </div>
-
                       {/* AI Resolution Assistant */}
                       <ResolutionAssistant id={complaint.id} urgency={complaint.urgency} status={complaint.status} />
 
