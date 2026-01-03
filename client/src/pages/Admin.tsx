@@ -128,16 +128,15 @@ function PinModal({ onCorrectPin }: { onCorrectPin: () => void }) {
 
 export default function Admin() {
   const [, setLocation] = useLocation();
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("role") === "admin");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { data: complaints, isLoading, error } = useComplaints(true);
   const updateStatus = useUpdateComplaintStatus();
 
   const handleCorrectPin = () => {
-    localStorage.setItem("role", "admin");
-    setIsAdmin(true);
+    setIsAuthenticated(true);
   };
 
-  if (!isAdmin) {
+  if (!isAuthenticated) {
     return <PinModal onCorrectPin={handleCorrectPin} />;
   }
 
