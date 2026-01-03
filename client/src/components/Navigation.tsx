@@ -19,7 +19,7 @@ export function Navigation() {
               GR
             </div>
             <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-              CivicConnect
+              Nivaran AI
             </span>
           </div>
 

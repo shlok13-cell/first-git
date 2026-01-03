@@ -1,8 +1,8 @@
-# CivicConnect - Grievance Redressal System
+# Nivaran AI - Grievance Redressal System
 
 ## Overview
 
-CivicConnect is a citizen grievance submission and tracking platform. Users can submit complaints which are automatically classified by category, urgency, and assigned to appropriate departments. The system provides a dashboard to view and manage all submitted grievances with status tracking.
+Nivaran AI is a citizen grievance submission and tracking platform. Users can submit complaints which are automatically classified by category, urgency, and assigned to appropriate departments. The system provides a dashboard to view and manage all submitted grievances with status tracking.
 
 The application is a full-stack TypeScript project with a React frontend and Express backend, using in-memory storage by default with PostgreSQL schema definitions ready for database integration.
 
