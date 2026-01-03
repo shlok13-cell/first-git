@@ -110,19 +110,25 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   );
 }
 
-import { Star } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
+import { useSubmitFeedback } from "@/hooks/use-complaints";
 
-function SatisfactionFeedback({ status }: { status: string }) {
+function SatisfactionFeedback({ complaint }: { complaint: Complaint }) {
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const { mutate: submitFeedback, isPending } = useSubmitFeedback();
 
-  if (status !== "Resolved") return null;
+  if (complaint.status !== "Resolved") return null;
+
+  const hasSubmitted = !!(complaint.feedbackRating || complaint.feedbackComment);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    // Feedback submission logic would go here
+    submitFeedback({ 
+      id: complaint.id, 
+      rating, 
+      comment: feedback 
+    });
   };
 
   return (
@@ -130,24 +136,43 @@ function SatisfactionFeedback({ status }: { status: string }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-          Share Your Feedback
+          {hasSubmitted ? "Feedback Submitted" : "Share Your Feedback"}
         </CardTitle>
         <CardDescription>
-          How satisfied are you with the resolution of your grievance?
+          {hasSubmitted 
+            ? "Thank you for sharing your experience with us." 
+            : "How satisfied are you with the resolution of your grievance?"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {submitted ? (
+        {hasSubmitted ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-4 space-y-2"
+            className="space-y-4"
           >
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Check className="w-6 h-6 text-green-600" />
+            <div className="flex gap-1 justify-center py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={cn(
+                    "w-6 h-6",
+                    (complaint.feedbackRating || 0) >= star 
+                      ? "text-yellow-500 fill-yellow-500" 
+                      : "text-muted"
+                  )}
+                />
+              ))}
             </div>
-            <p className="font-semibold text-green-700">Thank you for your feedback!</p>
-            <p className="text-sm text-green-600/80">Your input helps us improve our services.</p>
+            {complaint.feedbackComment && (
+              <p className="text-sm text-muted-foreground bg-white/50 p-3 rounded-lg italic">
+                "{complaint.feedbackComment}"
+              </p>
+            )}
+            <div className="flex items-center justify-center gap-2 text-green-700 font-semibold text-sm pt-2">
+              <Check className="w-4 h-4" />
+              Your feedback helps us improve
+            </div>
           </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -175,8 +200,9 @@ function SatisfactionFeedback({ status }: { status: string }) {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={!rating}
+              disabled={!rating || isPending}
             >
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Submit Feedback
             </Button>
           </form>
@@ -324,7 +350,7 @@ function TrackingPanel() {
                     </div>
 
                     {/* Satisfaction Feedback Section - Only shown when Resolved */}
-                    <SatisfactionFeedback status={complaint.status} />
+                    <SatisfactionFeedback complaint={complaint} />
                   </CardContent>
                 </Card>
               </motion.div>
