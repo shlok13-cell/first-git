@@ -1,37 +1,28 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { type Complaint, type InsertComplaint } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createComplaint(complaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint>;
+  getComplaints(): Promise<Complaint[]>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private complaints: Map<number, Complaint>;
+  private currentId: number;
 
   constructor() {
-    this.users = new Map();
+    this.complaints = new Map();
+    this.currentId = 1;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async createComplaint(insertComplaint: InsertComplaint & { category: string, urgency: number, department: string }): Promise<Complaint> {
+    const id = this.currentId++;
+    const complaint: Complaint = { ...insertComplaint, id };
+    this.complaints.set(id, complaint);
+    return complaint;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async getComplaints(): Promise<Complaint[]> {
+    return Array.from(this.complaints.values());
   }
 }
 
